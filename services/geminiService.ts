@@ -6,6 +6,11 @@ const parseSufferingLabel = (type: SufferingType): string => {
   return type.toString();
 };
 
+// Use Abstract Keys (English) for Image Generation to ensure better adherence and safety
+const getCardAbstractKeys = (cardIds: string[]): string => {
+  return MOOD_CARDS.filter(c => cardIds.includes(c.id)).map(c => c.abstractKey).join(", ");
+};
+
 const getCardLabels = (cardIds: string[]): string => {
   return MOOD_CARDS.filter(c => cardIds.includes(c.id)).map(c => c.label).join(", ");
 };
@@ -46,30 +51,31 @@ export const generateMindImage = async (input: UserInput): Promise<string | unde
   const ai = new GoogleGenAI({ apiKey });
   const modelId = "gemini-2.5-flash-image";
 
-  // Construct a prompt for surrealist visualization
+  // CRITICAL FIX: 
+  // 1. Removed `input.confusionText` to prevent SAFETY blocks from the image model (it is sensitive to negative user text).
+  // 2. Used `getCardAbstractKeys` (English) instead of Chinese labels for better visual interpretation.
   const prompt = `
     Create a surrealist masterpiece painting, vertical composition (9:16 aspect ratio).
-    Style: Surrealism, abstract, spiritual, Zen, dreamlike. Similar to Salvador Dali meets Zdzisław Beksiński but softer, more philosophical.
+    Style: Surrealism, abstract, spiritual, Zen, dreamlike. Similar to Zdzisław Beksiński meets traditional ink wash painting, but softer.
     
-    Subject: A visual manifestation of a person's inner state.
-    Core Suffering: ${parseSufferingLabel(input.sufferingType)}.
-    The Confusion: "${input.confusionText}".
-    Keywords: ${getCardLabels(input.selectedCards)}.
+    Concept: A symbolic representation of inner turmoil and silence.
+    Theme: ${parseSufferingLabel(input.sufferingType)}.
+    Visual Elements: ${getCardAbstractKeys(input.selectedCards)}.
     
-    Atmosphere: Mysterious, deep, potentially slightly dark but with a glimmer of light (hope/wisdom).
+    Atmosphere: Mysterious, misty, deep, with a subtle golden light breaking through darkness.
     
     IMPORTANT CONSTRAINTS: 
-    1. NO TEXT. NO CHARACTERS (Letters/Hanzi). 
-    2. NO SIGNATURE.
-    3. Pure visual imagery.
+    1. NO TEXT. NO CHARACTERS. 
+    2. NO REALISTIC GORE OR VIOLENCE.
+    3. Purely abstract and symbolic visualization.
   `;
 
   try {
     const response = await ai.models.generateContent({
       model: modelId,
-      contents: {
-        parts: [{ text: prompt }]
-      },
+      contents: [
+        { parts: [{ text: prompt }] }
+      ],
       config: {
         imageConfig: {
             aspectRatio: "9:16",
@@ -82,6 +88,8 @@ export const generateMindImage = async (input: UserInput): Promise<string | unde
         return `data:image/png;base64,${part.inlineData.data}`;
       }
     }
+    // Log if no image part was found (likely filtered)
+    console.warn("Image generated but no inlineData found. Finish Reason:", response.candidates?.[0]?.finishReason);
     return undefined;
   } catch (error) {
     console.error("Image Generation Error:", error);

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AnalysisResult } from '../types';
-import { Download, Sparkles, Flame } from 'lucide-react';
+import { Download, Sparkles, Flame, CloudFog } from 'lucide-react';
 
 interface Props {
   data: AnalysisResult;
@@ -67,7 +67,7 @@ const PhaseVisualize: React.FC<Props> = ({ data, onNext }) => {
       </div>
 
       {/* Image Container */}
-      <div className="relative w-full max-w-sm aspect-[9/16] rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(197,160,89,0.15)] border border-zen-gray group select-none">
+      <div className="relative w-full max-w-sm aspect-[9/16] rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(197,160,89,0.15)] border border-zen-gray group select-none bg-zen-black/50">
         {data.generatedImage ? (
           <>
             <div 
@@ -104,9 +104,14 @@ const PhaseVisualize: React.FC<Props> = ({ data, onNext }) => {
             </div>
           </>
         ) : (
-          <div className="w-full h-full bg-zen-gray/10 flex items-center justify-center flex-col space-y-4">
-             <div className="text-4xl opacity-20">🌫️</div>
-             <p className="text-zen-paper/30 text-xs tracking-widest">心 雾 弥 漫 ...</p>
+          <div className="w-full h-full flex items-center justify-center flex-col space-y-6 p-6 text-center animate-pulse-slow">
+             <CloudFog className="w-20 h-20 text-zen-gray/30" />
+             <div className="space-y-2">
+                <p className="text-zen-paper/40 text-sm font-serif tracking-widest">心 雾 过 浓</p>
+                <p className="text-zen-paper/20 text-xs font-light">
+                    妄念太深，难以成相。<br/>然心诚则灵，亦可直接解脱。
+                </p>
+             </div>
           </div>
         )}
       </div>
