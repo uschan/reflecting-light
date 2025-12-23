@@ -1,3 +1,4 @@
+
 export enum AppPhase {
   Start = 'START',
   Diagnose = 'DIAGNOSE',
@@ -53,6 +54,7 @@ export interface AnalysisResult {
   awakeningStone: string; // Smallest actionable step
   timestamp: number;
   generatedImage?: string; // Base64 data URI for the generated mind image
+  imageError?: string; // Captures why image generation failed
   verseAudio?: string; // Base64 audio string for the spoken verse
 }
 

@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, Schema, Modality } from "@google/genai";
 import { UserInput, AnalysisResult, SufferingType } from "../types";
 import { MOOD_CARDS } from "../constants";
@@ -9,10 +10,6 @@ const parseSufferingLabel = (type: SufferingType): string => {
 // Use Abstract Keys (English) for Image Generation to ensure better adherence and safety
 const getCardAbstractKeys = (cardIds: string[]): string => {
   return MOOD_CARDS.filter(c => cardIds.includes(c.id)).map(c => c.abstractKey).join(", ");
-};
-
-const getCardLabels = (cardIds: string[]): string => {
-  return MOOD_CARDS.filter(c => cardIds.includes(c.id)).map(c => c.label).join(", ");
 };
 
 export const generateVerseAudio = async (verse: string): Promise<string | undefined> => {
@@ -44,30 +41,31 @@ export const generateVerseAudio = async (verse: string): Promise<string | undefi
     }
   };
 
-export const generateMindImage = async (input: UserInput): Promise<string | undefined> => {
+interface ImageGenerationResult {
+  imageUrl?: string;
+  error?: string;
+}
+
+export const generateMindImage = async (input: UserInput): Promise<ImageGenerationResult> => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) return undefined;
+  if (!apiKey) return { error: "API Key missing" };
 
   const ai = new GoogleGenAI({ apiKey });
   const modelId = "gemini-2.5-flash-image";
 
-  // CRITICAL FIX: 
-  // 1. Removed `input.confusionText` to prevent SAFETY blocks from the image model (it is sensitive to negative user text).
-  // 2. Used `getCardAbstractKeys` (English) instead of Chinese labels for better visual interpretation.
+  // SAFER PROMPT STRATEGY:
+  // Removed "Zdzisław Beksiński" as it often triggers safety filters for dark content.
+  // Switched to "Abstract Zen Ink Wash" and "Mark Rothko" for a safer, more spiritual aesthetic.
   const prompt = `
-    Create a surrealist masterpiece painting, vertical composition (9:16 aspect ratio).
-    Style: Surrealism, abstract, spiritual, Zen, dreamlike. Similar to Zdzisław Beksiński meets traditional ink wash painting, but softer.
+    Vertical composition (9:16). Abstract spiritual art.
+    Style: Ethereal ink wash painting mixed with Mark Rothko color fields. Minimalist, Zen, Dreamlike.
     
-    Concept: A symbolic representation of inner turmoil and silence.
-    Theme: ${parseSufferingLabel(input.sufferingType)}.
-    Visual Elements: ${getCardAbstractKeys(input.selectedCards)}.
+    Concept: Inner psychological state.
+    Keywords: ${parseSufferingLabel(input.sufferingType)}, ${getCardAbstractKeys(input.selectedCards)}.
     
-    Atmosphere: Mysterious, misty, deep, with a subtle golden light breaking through darkness.
+    Atmosphere: Misty, obscure, with a faint golden light in the distance.
     
-    IMPORTANT CONSTRAINTS: 
-    1. NO TEXT. NO CHARACTERS. 
-    2. NO REALISTIC GORE OR VIOLENCE.
-    3. Purely abstract and symbolic visualization.
+    CONSTRAINTS: Abstract shapes only. No text. No faces. No realistic violence.
   `;
 
   try {
@@ -83,18 +81,28 @@ export const generateMindImage = async (input: UserInput): Promise<string | unde
       },
     });
 
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
+    const candidate = response.candidates?.[0];
+    
+    // Check for finishReason issues (e.g. SAFETY)
+    if (candidate?.finishReason && candidate.finishReason !== "STOP") {
+        return { error: `Filtered: ${candidate.finishReason}` };
+    }
+
+    for (const part of candidate?.content?.parts || []) {
       if (part.inlineData) {
-        return `data:image/png;base64,${part.inlineData.data}`;
+        return { imageUrl: `data:image/png;base64,${part.inlineData.data}` };
       }
     }
-    // Log if no image part was found (likely filtered)
-    console.warn("Image generated but no inlineData found. Finish Reason:", response.candidates?.[0]?.finishReason);
-    return undefined;
-  } catch (error) {
+    
+    return { error: "No image data returned" };
+  } catch (error: any) {
     console.error("Image Generation Error:", error);
-    // Return undefined so the app can continue without the image if generation fails
-    return undefined;
+    let errorMsg = error.message || "Unknown error";
+    // Provide hint for common 403 error which is likely Referrer related
+    if (errorMsg.includes("403") || errorMsg.includes("permission")) {
+        errorMsg = "403 Forbidden (Check API Key Referrer Restrictions)";
+    }
+    return { error: errorMsg };
   }
 };
 

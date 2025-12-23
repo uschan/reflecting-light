@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppPhase, UserInput, AnalysisResult, ArchiveItem } from './types';
 import PhaseDiagnose from './components/PhaseDiagnose';
@@ -89,7 +90,7 @@ const App: React.FC = () => {
     try {
       // 1. Start Analysis (Text)
       const analysisPromise = analyzeConfusion(input);
-      // 2. Start Image Generation
+      // 2. Start Image Generation (Now returns object with error support)
       const imagePromise = generateMindImage(input);
       
       // Wait for analysis first to get the verse, so we can generate audio
@@ -99,11 +100,12 @@ const App: React.FC = () => {
       const audioPromise = generateVerseAudio(analysisResult.verse);
 
       // Wait for Image and Audio
-      const [imageUrl, audioBase64] = await Promise.all([imagePromise, audioPromise]);
+      const [imageResult, audioBase64] = await Promise.all([imagePromise, audioPromise]);
       
       const fullResult: AnalysisResult = {
         ...analysisResult,
-        generatedImage: imageUrl,
+        generatedImage: imageResult.imageUrl,
+        imageError: imageResult.error,
         verseAudio: audioBase64,
       };
 

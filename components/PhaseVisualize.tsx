@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { AnalysisResult } from '../types';
-import { Download, Sparkles, Flame, CloudFog } from 'lucide-react';
+import { Download, Sparkles, Flame, CloudFog, AlertCircle } from 'lucide-react';
 
 interface Props {
   data: AnalysisResult;
@@ -12,8 +13,6 @@ const PhaseVisualize: React.FC<Props> = ({ data, onNext }) => {
   const [burned, setBurned] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const [progress, setProgress] = useState(0);
-
-  // Audio effect for burning (simulated via Web Audio API ideally, but using visual feedback primarily)
 
   const handlePointerDown = () => {
     if (burned) return;
@@ -104,7 +103,7 @@ const PhaseVisualize: React.FC<Props> = ({ data, onNext }) => {
             </div>
           </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center flex-col space-y-6 p-6 text-center animate-pulse-slow">
+          <div className="w-full h-full flex items-center justify-center flex-col space-y-6 p-6 text-center animate-pulse-slow relative">
              <CloudFog className="w-20 h-20 text-zen-gray/30" />
              <div className="space-y-2">
                 <p className="text-zen-paper/40 text-sm font-serif tracking-widest">心 雾 过 浓</p>
@@ -112,6 +111,16 @@ const PhaseVisualize: React.FC<Props> = ({ data, onNext }) => {
                     妄念太深，难以成相。<br/>然心诚则灵，亦可直接解脱。
                 </p>
              </div>
+             
+             {/* Error Details for Debugging */}
+             {data.imageError && (
+                 <div className="absolute bottom-6 left-0 right-0 px-4">
+                     <div className="flex items-center justify-center gap-2 text-zen-red/50 text-[10px] bg-zen-black/60 p-2 rounded">
+                        <AlertCircle className="w-3 h-3" />
+                        <span className="font-mono">{data.imageError}</span>
+                     </div>
+                 </div>
+             )}
           </div>
         )}
       </div>
