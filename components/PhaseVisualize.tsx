@@ -1,7 +1,6 @@
-
 import React, { useState, useRef } from 'react';
 import { AnalysisResult } from '../types';
-import { Download, Sparkles, Flame, CloudFog, AlertCircle } from 'lucide-react';
+import { Download, Sparkles, Flame, CloudFog, AlertTriangle } from 'lucide-react';
 
 interface Props {
   data: AnalysisResult;
@@ -103,24 +102,41 @@ const PhaseVisualize: React.FC<Props> = ({ data, onNext }) => {
             </div>
           </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center flex-col space-y-6 p-6 text-center animate-pulse-slow relative">
-             <CloudFog className="w-20 h-20 text-zen-gray/30" />
-             <div className="space-y-2">
-                <p className="text-zen-paper/40 text-sm font-serif tracking-widest">心 雾 过 浓</p>
-                <p className="text-zen-paper/20 text-xs font-light">
-                    妄念太深，难以成相。<br/>然心诚则灵，亦可直接解脱。
-                </p>
+          <div className="w-full h-full flex flex-col items-center justify-center text-center p-6 relative bg-zen-black">
+             {/* Abstract Fallback Visual - "The Void" */}
+             <div className={`absolute inset-0 opacity-20 transition-all duration-500 ${burning ? 'scale-110 brightness-150' : 'animate-pulse-slow'}`}>
+                 <svg viewBox="0 0 100 160" className="w-full h-full fill-zen-gray">
+                    <circle cx="50" cy="80" r="40" filter="blur(20px)" />
+                 </svg>
              </div>
              
-             {/* Error Details for Debugging */}
-             {data.imageError && (
-                 <div className="absolute bottom-6 left-0 right-0 px-4">
-                     <div className="flex items-center justify-center gap-2 text-zen-red/50 text-[10px] bg-zen-black/60 p-2 rounded">
-                        <AlertCircle className="w-3 h-3" />
-                        <span className="font-mono">{data.imageError}</span>
-                     </div>
+             {/* Content */}
+             <div className="relative z-10 space-y-4">
+                 <CloudFog className="w-16 h-16 text-zen-gray/50 mx-auto" />
+                 
+                 <div className="space-y-1">
+                    <p className="text-zen-paper/60 text-lg font-serif tracking-widest">无 相 之 相</p>
+                    <p className="text-zen-paper/30 text-xs font-light max-w-[200px] mx-auto leading-relaxed">
+                        心念过重，或缘法未到（额度耗尽）。<br/>
+                        虽无图像，但执念仍在。<br/>
+                        <span className="text-zen-gold/50">亦可直接长按，以此空相修心。</span>
+                    </p>
                  </div>
-             )}
+
+                 {/* Error Hint */}
+                 {data.imageError && (
+                     <div className="mt-4 pt-4 border-t border-zen-gray/20 flex items-center justify-center gap-2 text-zen-red/40 text-[10px]">
+                        <AlertTriangle className="w-3 h-3" />
+                        <span className="font-mono max-w-[220px] truncate">{data.imageError}</span>
+                     </div>
+                 )}
+             </div>
+
+             {/* Burn Overlay for Fallback */}
+             <div 
+                className="absolute inset-0 bg-gradient-to-t from-zen-gold/20 via-zen-red/20 to-transparent transition-opacity duration-300 pointer-events-none"
+                style={{ opacity: progress / 100 }}
+            />
           </div>
         )}
       </div>

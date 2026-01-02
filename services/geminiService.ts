@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Schema, Modality } from "@google/genai";
 import { UserInput, AnalysisResult, SufferingType } from "../types";
 import { MOOD_CARDS } from "../constants";
@@ -46,26 +45,29 @@ interface ImageGenerationResult {
   error?: string;
 }
 
+// RESTORED: Using Google Gemini API (gemini-2.5-flash-image)
+// Requires a Paid/Billing-enabled API Key to avoid 429 Quota errors.
 export const generateMindImage = async (input: UserInput): Promise<ImageGenerationResult> => {
   const apiKey = process.env.API_KEY;
   if (!apiKey) return { error: "API Key missing" };
 
   const ai = new GoogleGenAI({ apiKey });
+  // Using the specific model for image generation as per guidelines
   const modelId = "gemini-2.5-flash-image";
 
-  // SAFER PROMPT STRATEGY:
-  // Removed "Zdzisław Beksiński" as it often triggers safety filters for dark content.
-  // Switched to "Abstract Zen Ink Wash" and "Mark Rothko" for a safer, more spiritual aesthetic.
+  // MODIFIED PROMPT: Switching from "Ink Wash/Abstract" back to "Surrealist Concept Art"
+  // This style provides concrete metaphors (chains, voids, storms) and cinematic lighting.
   const prompt = `
-    Vertical composition (9:16). Abstract spiritual art.
-    Style: Ethereal ink wash painting mixed with Mark Rothko color fields. Minimalist, Zen, Dreamlike.
+    Vertical composition (9:16). Masterpiece, award-winning concept art.
+    Style: Surrealism, Psychological Dark Fantasy, Cinematic Lighting. 
+    Influences: Zdzisław Beksiński (atmospheric), Salvador Dali (symbolism), Tarot Card Art.
     
-    Concept: Inner psychological state.
-    Keywords: ${parseSufferingLabel(input.sufferingType)}, ${getCardAbstractKeys(input.selectedCards)}.
+    Subject: A profound visual metaphor for the human suffering of "${parseSufferingLabel(input.sufferingType)}" combined with the concept of "${getCardAbstractKeys(input.selectedCards)}".
     
-    Atmosphere: Misty, obscure, with a faint golden light in the distance.
+    Visuals: Highly detailed, dramatic shadows, volumetric fog, moody, mystical, emotional depth. 
+    Use deep colors (Deep Gold, Crimson, Obsidian, Foggy Gray).
     
-    CONSTRAINTS: Abstract shapes only. No text. No faces. No realistic violence.
+    CONSTRAINTS: No text. No photorealistic human faces (silhouettes or statues are okay). No gore.
   `;
 
   try {
@@ -97,11 +99,18 @@ export const generateMindImage = async (input: UserInput): Promise<ImageGenerati
     return { error: "No image data returned" };
   } catch (error: any) {
     console.error("Image Generation Error:", error);
-    let errorMsg = error.message || "Unknown error";
-    // Provide hint for common 403 error which is likely Referrer related
-    if (errorMsg.includes("403") || errorMsg.includes("permission")) {
-        errorMsg = "403 Forbidden (Check API Key Referrer Restrictions)";
+    
+    let errorMsg = error.message || JSON.stringify(error);
+    
+    // Precise Error Handling for Paid Tier users
+    if (errorMsg.includes("429") || errorMsg.includes("quota") || errorMsg.includes("RESOURCE_EXHAUSTED")) {
+        errorMsg = "API额度耗尽 (429): 请检查 Google Cloud 账单状态";
+    } else if (errorMsg.includes("403") || errorMsg.includes("permission")) {
+        errorMsg = "权限校验失败 (403): 请检查 API Key 限制";
+    } else if (errorMsg.includes("SAFETY")) {
+        errorMsg = "内容被安全过滤器拦截";
     }
+
     return { error: errorMsg };
   }
 };
